@@ -1,4 +1,4 @@
-package org.nerotheum.vaadinmqtt;
+package com.nerotheum.vaadinmqtt;
 
 import com.vaadin.flow.component.page.AppShellConfigurator;
 import com.vaadin.flow.server.PWA;

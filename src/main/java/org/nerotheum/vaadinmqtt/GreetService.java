@@ -1,4 +1,4 @@
-package org.vaadin.example;
+package org.nerotheum.vaadinmqtt;
 
 import java.io.Serializable;
 

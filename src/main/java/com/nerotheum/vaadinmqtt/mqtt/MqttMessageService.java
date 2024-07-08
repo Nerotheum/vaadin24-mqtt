@@ -16,4 +16,8 @@ public class MqttMessageService {
     public List<MqttMessage> findAll() {
         return repository.findAll();
     }
+
+    public void add(MqttMessage entity) {
+        repository.save(entity);
+    }
 }

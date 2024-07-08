@@ -18,6 +18,10 @@ public class MqttMessage {
     private String message;
     private LocalDateTime dateTime;
 
+    public MqttMessage() {
+        
+    }
+
     public MqttMessage(String topic, String message) {
         this.topic = topic;
         this.message = message;

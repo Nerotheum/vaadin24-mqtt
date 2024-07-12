@@ -60,7 +60,7 @@ public class MqttConnectionService {
 
     public void publish(MqttValue mqttValue) {
         try {
-            MqttMessage mqttMessage = new org.eclipse.paho.client.mqttv3.MqttMessage(mqttValue.getMessage().getBytes());
+            MqttMessage mqttMessage = new MqttMessage(mqttValue.getMessage().getBytes());
             mqttMessage.setQos(2);
             mqttClient.publish(mqttValue.getTopic(), mqttMessage);
         } catch (MqttException ex) {

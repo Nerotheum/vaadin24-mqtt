@@ -45,14 +45,30 @@ public class MainView extends VerticalLayout {
         publishButton.addClickListener(click -> {
             MqttValue mqttValue = new MqttValue(topicField.getValue(), messageField.getValue());
             mqttConnectionService.publish(mqttValue);
+            topicField.setValue("");
+            messageField.setValue("");
         });
         publishLayout.setVerticalComponentAlignment(FlexComponent.Alignment.END, publishButton);
         publishLayout.add(topicField, messageField, publishButton);
-        add(publishLayout);
 
+        Button refreshButton = new Button("Refresh");        
+        refreshButton.addClickListener(click -> {
+            populateGrid();
+        });
+        
+        HorizontalLayout wrapperLayout = new HorizontalLayout(publishLayout, refreshButton);
+        wrapperLayout.setWidthFull();
+        wrapperLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.BETWEEN);
+        wrapperLayout.setVerticalComponentAlignment(FlexComponent.Alignment.END, refreshButton);
+        add(wrapperLayout);
+
+        mqttValueGrid.setColumns("id", "topic", "message", "dateTime");
+        populateGrid();
+        add(mqttValueGrid);
+    }
+
+    public void populateGrid() {
         List<MqttValue> messages = mqttValueService.findAll();
         mqttValueGrid.setItems(messages);
-        mqttValueGrid.setColumns("id", "topic", "message", "dateTime");
-        add(mqttValueGrid);
     }
 }

@@ -7,16 +7,10 @@ import com.vaadin.flow.theme.Theme;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
-/**
- * The entry point of the Spring Boot application.
- *
- * Use the @PWA annotation make the application installable on phones, tablets
- * and some desktop browsers.
- *
- */
+
 @SpringBootApplication
-@PWA(name = "Project Base for Vaadin with Spring", shortName = "Project Base")
-@Theme("my-theme")
+@PWA(name = "Vaadin with Spring Boot and MQTT", shortName = "Vaadin x Spring Boot x MQTT")
+@Theme("default")
 public class Application implements AppShellConfigurator {
 
     public static void main(String[] args) {

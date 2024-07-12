@@ -3,8 +3,8 @@ package com.nerotheum.vaadinmqtt;
 import java.util.List;
 
 import com.nerotheum.vaadinmqtt.mqtt.MqttConnectionService;
-import com.nerotheum.vaadinmqtt.mqtt.MqttMessage;
-import com.nerotheum.vaadinmqtt.mqtt.MqttMessageService;
+import com.nerotheum.vaadinmqtt.mqtt.MqttValue;
+import com.nerotheum.vaadinmqtt.mqtt.MqttValueService;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import com.vaadin.flow.component.button.Button;
@@ -21,13 +21,13 @@ import jakarta.annotation.PostConstruct;
 @Route
 public class MainView extends VerticalLayout {
 
-    private final MqttMessageService mqttMessageService;
-    private final Grid<MqttMessage> mqttMessageGrid;
+    private final MqttValueService mqttValueService;
+    private final Grid<MqttValue> mqttValueGrid;
     private final MqttConnectionService mqttConnectionService;
 
-    public MainView(@Autowired MqttMessageService mqttMessageService, @Autowired MqttConnectionService mqttConnectionService) {
-        this.mqttMessageService = mqttMessageService;
-        this.mqttMessageGrid = new Grid<>(MqttMessage.class);
+    public MainView(@Autowired MqttValueService mqttValueService, @Autowired MqttConnectionService mqttConnectionService) {
+        this.mqttValueService = mqttValueService;
+        this.mqttValueGrid = new Grid<>(MqttValue.class);
         this.mqttConnectionService = mqttConnectionService;
     }
 
@@ -42,13 +42,17 @@ public class MainView extends VerticalLayout {
         TextField topicField = new TextField("Topic");
         TextField messageField = new TextField("Message");
         Button publishButton = new Button("Publish");
+        publishButton.addClickListener(click -> {
+            MqttValue mqttValue = new MqttValue(topicField.getValue(), messageField.getValue());
+            mqttConnectionService.publish(mqttValue);
+        });
         publishLayout.setVerticalComponentAlignment(FlexComponent.Alignment.END, publishButton);
         publishLayout.add(topicField, messageField, publishButton);
         add(publishLayout);
 
-        List<MqttMessage> messages = mqttMessageService.findAll();
-        mqttMessageGrid.setItems(messages);
-        mqttMessageGrid.setColumns("id", "topic", "message", "dateTime");
-        add(mqttMessageGrid);
+        List<MqttValue> messages = mqttValueService.findAll();
+        mqttValueGrid.setItems(messages);
+        mqttValueGrid.setColumns("id", "topic", "message", "dateTime");
+        add(mqttValueGrid);
     }
 }

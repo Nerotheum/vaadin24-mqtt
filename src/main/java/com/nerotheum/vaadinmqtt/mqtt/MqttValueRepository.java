@@ -5,6 +5,6 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public interface MqttMessageRepository extends JpaRepository<MqttMessage, Long>, JpaSpecificationExecutor<MqttMessage> {
+public interface MqttValueRepository extends JpaRepository<MqttValue, Long>, JpaSpecificationExecutor<MqttValue> {
 
 }

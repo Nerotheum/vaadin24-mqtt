@@ -6,18 +6,18 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 @Service
-public class MqttMessageService {
-    private final MqttMessageRepository repository;
+public class MqttValueService {
+    private final MqttValueRepository repository;
 
-    public MqttMessageService(@Autowired MqttMessageRepository repository) {
+    public MqttValueService(@Autowired MqttValueRepository repository) {
         this.repository = repository;
     }
 
-    public List<MqttMessage> findAll() {
+    public List<MqttValue> findAll() {
         return repository.findAll();
     }
 
-    public void add(MqttMessage entity) {
+    public void add(MqttValue entity) {
         repository.save(entity);
     }
 }

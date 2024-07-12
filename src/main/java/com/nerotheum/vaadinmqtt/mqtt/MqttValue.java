@@ -9,8 +9,8 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
 @Entity
-@Table(name = "mqtt_messages")
-public class MqttMessage {
+@Table(name = "mqtt_values")
+public class MqttValue {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;
@@ -18,11 +18,11 @@ public class MqttMessage {
     private String message;
     private LocalDateTime dateTime;
 
-    public MqttMessage() {
+    public MqttValue() {
         
     }
 
-    public MqttMessage(String topic, String message) {
+    public MqttValue(String topic, String message) {
         this.topic = topic;
         this.message = message;
         this.dateTime = LocalDateTime.now();
@@ -42,5 +42,9 @@ public class MqttMessage {
 
     public LocalDateTime getDateTime() {
         return dateTime;
+    }
+
+    public String toString() {
+        return "Topic: " + topic + ", Message: " + message;
     }
 }

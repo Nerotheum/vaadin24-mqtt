@@ -1,4 +1,4 @@
-package com.nerotheum.vaadinmqtt;
+package com.nerotheum.vaadinmqtt.utils;
 
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.notification.NotificationVariant;

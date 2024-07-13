@@ -64,7 +64,7 @@ public class MqttConnectionService {
             mqttMessage.setQos(2);
             mqttClient.publish(mqttValue.getTopic(), mqttMessage);
         } catch (MqttException ex) {
-            logger.warning(ex.getMessage());
+            logger.warning("Error while publishing a MQTT message: " + ex.getMessage());
         }
     }
 

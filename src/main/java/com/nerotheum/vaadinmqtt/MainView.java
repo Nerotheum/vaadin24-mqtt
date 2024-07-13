@@ -26,7 +26,8 @@ public class MainView extends VerticalLayout {
     private final MqttConnectionService mqttConnectionService;
     private Span mqttStatusBadge;
 
-    public MainView(@Autowired MqttValueService mqttValueService, @Autowired MqttConnectionService mqttConnectionService) {
+    @Autowired 
+    public MainView(MqttValueService mqttValueService, MqttConnectionService mqttConnectionService) {
         this.mqttValueService = mqttValueService;
         this.mqttValueGrid = new Grid<>(MqttValue.class);
         this.mqttConnectionService = mqttConnectionService;
@@ -57,13 +58,30 @@ public class MainView extends VerticalLayout {
     public void createToolbar() {
         HorizontalLayout publishLayout = new HorizontalLayout();
         TextField topicField = new TextField("Topic");
+        topicField.setRequired(true);
         TextField messageField = new TextField("Message");
+        messageField.setRequired(true);
         Button publishButton = new Button("Publish");
         publishButton.addClickListener(click -> {
+            createStatusBadge();
+            if(topicField.isEmpty() || messageField.isEmpty()) {
+                if(topicField.isEmpty())
+                    topicField.setInvalid(true);
+                if(messageField.isEmpty())
+                    messageField.setInvalid(true);
+                return;
+            }
+            if(!mqttConnectionService.getMqttClient().isConnected()) {
+                NotificationUtil.create(true, "Could not publish message: Client is not connected!");
+                return;
+            }
             MqttValue mqttValue = new MqttValue(topicField.getValue(), messageField.getValue());
             mqttConnectionService.publish(mqttValue);
             topicField.setValue("");
+            topicField.setInvalid(false);
             messageField.setValue("");
+            messageField.setInvalid(false);
+            NotificationUtil.create(false, "Message has been published!");
         });
         publishLayout.setVerticalComponentAlignment(FlexComponent.Alignment.END, publishButton);
         publishLayout.add(topicField, messageField, publishButton);

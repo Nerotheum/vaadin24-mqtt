@@ -35,20 +35,24 @@ public class MqttConnectionService {
     }
 
     @PostConstruct
-    public void connect() throws MqttException {
-        mqttClient = new MqttClient(brokerUrl, clientId, new MemoryPersistence());
-        MqttConnectOptions options = new MqttConnectOptions();
-        options.setUserName(username);
-        options.setPassword(password.toCharArray());
-        options.setCleanSession(true);
+    public void connect() {
+        try {
+            mqttClient = new MqttClient(brokerUrl, clientId, new MemoryPersistence());
+            MqttConnectOptions options = new MqttConnectOptions();
+            options.setUserName(username);
+            options.setPassword(password.toCharArray());
+            options.setCleanSession(true);
 
-        mqttClient.connect(options);
-        logger.info("Connected to MQTT broker: " + brokerUrl);
-        mqttClient.subscribe("#", (topic, message) -> {
-            MqttValue mqttValue = new MqttValue(topic, new String(message.getPayload()));
-            logger.info("Received message: " + mqttValue.toString());
-            mqttValueService.add(mqttValue);
-        });
+            mqttClient.connect(options);
+            logger.info("Connected to MQTT broker: " + brokerUrl);
+            mqttClient.subscribe("#", (topic, message) -> {
+                MqttValue mqttValue = new MqttValue(topic, new String(message.getPayload()));
+                logger.info("Received message: " + mqttValue.toString());
+                mqttValueService.add(mqttValue);
+            });
+        } catch(Exception ex) {
+            logger.warning(ex.getMessage());
+        }
     }
 
     @PreDestroy

@@ -9,7 +9,8 @@ import org.springframework.stereotype.Service;
 public class MqttValueService {
     private final MqttValueRepository repository;
 
-    public MqttValueService(@Autowired MqttValueRepository repository) {
+    @Autowired
+    public MqttValueService(MqttValueRepository repository) {
         this.repository = repository;
     }
 

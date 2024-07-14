@@ -1,5 +1,6 @@
 package com.nerotheum.vaadinmqtt.mqtt;
 
+import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -7,11 +8,13 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import com.nerotheum.vaadinmqtt.broadcast.Broadcaster;
-import com.vaadin.flow.component.UI;
 
 import org.eclipse.paho.client.mqttv3.*;
 import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
 
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
 @Service
@@ -31,16 +34,27 @@ public class MqttConnectionService {
     private final Logger logger = Logger.getLogger(this.getClass().getName());
     private IMqttClient mqttClient;
     private MqttValueService mqttValueService;
-    private UI ui;
+    private ScheduledExecutorService scheduler;
 
     @Autowired
     public MqttConnectionService(MqttValueService mqttValueService) {
         this.mqttValueService = mqttValueService;
     }
 
+    @PostConstruct
+    public void init() {
+        scheduler = Executors.newScheduledThreadPool(1);
+        scheduler.scheduleAtFixedRate(this::checkConnection, 0, 10, TimeUnit.SECONDS);
+    }
+
+    private void checkConnection() {
+        if (mqttClient == null || !mqttClient.isConnected()) {
+            Broadcaster.broadcast("RefreshConnectionStatus");
+        }
+    }
+
     public void connect() {
         try {
-            this.ui = UI.getCurrent();
             mqttClient = new MqttClient(brokerUrl, clientId, new MemoryPersistence());
             MqttConnectOptions options = new MqttConnectOptions();
             options.setUserName(username);

@@ -146,7 +146,8 @@ public class MainView extends VerticalLayout implements BroadcasterListener {
         getUI().ifPresent(ui -> ui.access((Command) () -> {
             switch(message) {
                 case "RefreshConnectionStatus":
-                    enableDisableComponents(mqttConnectionService.getMqttClient().isConnected());
+                    boolean connected = mqttConnectionService.getMqttClient() == null ? false : mqttConnectionService.getMqttClient().isConnected();
+                    enableDisableComponents(connected);
                     ui.push();
                     break;
                 case "RefreshGrid":

@@ -10,6 +10,7 @@ import com.nerotheum.vaadinmqtt.utils.NotificationUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
@@ -26,7 +27,7 @@ public class MainView extends VerticalLayout {
     private final MqttValueService mqttValueService;
     private final Grid<MqttValue> mqttValueGrid;
     private final MqttConnectionService mqttConnectionService;
-    private Span mqttStatusBadge;
+    private Span mqttStatusInfo;
 
     @Autowired 
     public MainView(MqttValueService mqttValueService, MqttConnectionService mqttConnectionService) {
@@ -37,23 +38,34 @@ public class MainView extends VerticalLayout {
 
     @PostConstruct
     private void init() {
-        createStatusBadge();
+        createStatusInfo();
         createToolbar();
         createGrid();
     }
 
-    public void createStatusBadge() {
+    public void createStatusInfo() {
         String mqttConnection = mqttConnectionService.getMqttClient().isConnected() ? "success" : "error";
-        if (mqttStatusBadge == null) {
-            mqttStatusBadge = new Span("MQTT connection status: " + mqttConnection);
-            mqttStatusBadge.setWidthFull();
-            mqttStatusBadge.setHeight("40px");
-            mqttStatusBadge.getElement().getThemeList().add("badge " + mqttConnection);
-            add(mqttStatusBadge);
+        if(mqttStatusInfo == null) {
+            mqttStatusInfo = new Span("MQTT connection status: " + mqttConnection);
+            mqttStatusInfo.setHeight("40px");
+            mqttStatusInfo.getElement().getThemeList().add("badge " + mqttConnection);
+
+            Button retryBtn = new Button("Reconnect");
+            retryBtn.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+            retryBtn.addClickListener(click -> {
+                mqttConnectionService.connect();
+                createStatusInfo();
+            });
+
+            HorizontalLayout wrapperLayout = new HorizontalLayout(mqttStatusInfo, retryBtn);
+            wrapperLayout.setWidthFull();
+            wrapperLayout.expand(mqttStatusInfo);
+            mqttStatusInfo.getStyle().set("flex-grow", "1");
+            add(wrapperLayout);
         } else {
-            mqttStatusBadge.setText("MQTT connection status: " + mqttConnection);
-            mqttStatusBadge.getElement().getThemeList().clear();
-            mqttStatusBadge.getElement().getThemeList().add("badge " + mqttConnection);
+            mqttStatusInfo.setText("MQTT connection status: " + mqttConnection);
+            mqttStatusInfo.getElement().getThemeList().clear();
+            mqttStatusInfo.getElement().getThemeList().add("badge " + mqttConnection);
         }
     }
 
@@ -65,7 +77,7 @@ public class MainView extends VerticalLayout {
         messageField.setRequired(true);
         Button publishButton = new Button("Publish");
         publishButton.addClickListener(click -> {
-            createStatusBadge();
+            createStatusInfo();
             if(topicField.isEmpty() || messageField.isEmpty()) {
                 if(topicField.isEmpty())
                     topicField.setInvalid(true);
@@ -90,7 +102,7 @@ public class MainView extends VerticalLayout {
 
         Button refreshButton = new Button("Refresh");        
         refreshButton.addClickListener(click -> {
-            createStatusBadge();
+            createStatusInfo();
             populateGrid();
         });
         

@@ -1,11 +1,17 @@
 package com.nerotheum.vaadinmqtt.mqtt;
 
-import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationEvent;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
+
+import com.nerotheum.vaadinmqtt.mqtt.events.MqttConnectionMessageReceiveEvent;
+import com.nerotheum.vaadinmqtt.mqtt.events.MqttConnectionStatusChangeEvent;
+import com.vaadin.flow.component.UI;
+
 import org.eclipse.paho.client.mqttv3.*;
 import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
 
@@ -26,17 +32,20 @@ public class MqttConnectionService {
     private String password;
 
     private final Logger logger = Logger.getLogger(this.getClass().getName());
+    private final ApplicationEventPublisher eventPublisher;
     private IMqttClient mqttClient;
     private MqttValueService mqttValueService;
+    private UI ui;
 
     @Autowired
-    public MqttConnectionService(MqttValueService mqttValueService) {
+    public MqttConnectionService(ApplicationEventPublisher eventPublisher, MqttValueService mqttValueService) {
+        this.eventPublisher = eventPublisher;
         this.mqttValueService = mqttValueService;
     }
 
-    @PostConstruct
     public void connect() {
         try {
+            this.ui = UI.getCurrent();
             mqttClient = new MqttClient(brokerUrl, clientId, new MemoryPersistence());
             MqttConnectOptions options = new MqttConnectOptions();
             options.setUserName(username);
@@ -44,22 +53,26 @@ public class MqttConnectionService {
             options.setCleanSession(true);
 
             mqttClient.connect(options);
-            logger.info("Connected to MQTT broker: " + brokerUrl);
             mqttClient.subscribe("#", (topic, message) -> {
                 MqttValue mqttValue = new MqttValue(topic, new String(message.getPayload()));
                 logger.info("Received message: " + mqttValue.toString());
                 mqttValueService.add(mqttValue);
+                publishEvent(new MqttConnectionMessageReceiveEvent(this, mqttValue));
             });
+            
+            logger.info("Connected to MQTT broker: " + brokerUrl);
         } catch(Exception ex) {
             logger.warning(ex.getMessage());
         }
+        publishEvent(new MqttConnectionStatusChangeEvent(this, mqttClient.isConnected()));
     }
 
     @PreDestroy
     public void disconnect() {
         try {
             mqttClient.disconnect();
-            logger.info("Connection lost to MQTT broker");
+            logger.info("Manually closed the connection to MQTT broker");
+            publishEvent(new MqttConnectionStatusChangeEvent(this, false));
         } catch (Exception ex) {
             logger.warning(ex.getMessage());
         }
@@ -77,5 +90,11 @@ public class MqttConnectionService {
 
     public IMqttClient getMqttClient() {
         return mqttClient;
+    }
+
+    public void publishEvent(ApplicationEvent applicationEvent) {
+        ui.access(() -> {
+            eventPublisher.publishEvent(applicationEvent);
+        });
     }
 }

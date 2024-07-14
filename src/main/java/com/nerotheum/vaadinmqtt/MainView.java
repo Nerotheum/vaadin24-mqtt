@@ -2,13 +2,16 @@ package com.nerotheum.vaadinmqtt;
 
 import java.util.List;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.event.EventListener;
+
 import com.nerotheum.vaadinmqtt.mqtt.MqttConnectionService;
 import com.nerotheum.vaadinmqtt.mqtt.MqttValue;
 import com.nerotheum.vaadinmqtt.mqtt.MqttValueService;
+import com.nerotheum.vaadinmqtt.mqtt.events.MqttConnectionMessageReceiveEvent;
+import com.nerotheum.vaadinmqtt.mqtt.events.MqttConnectionStatusChangeEvent;
 import com.nerotheum.vaadinmqtt.utils.NotificationUtil;
-
-import org.springframework.beans.factory.annotation.Autowired;
-
+import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.grid.Grid;
@@ -18,103 +21,98 @@ import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.router.Route;
+import com.vaadin.flow.spring.annotation.SpringComponent;
+import com.vaadin.flow.spring.annotation.UIScope;
 
 import jakarta.annotation.PostConstruct;
 
 @Route
+@UIScope
+@SpringComponent
 public class MainView extends VerticalLayout {
-
     private final MqttValueService mqttValueService;
-    private final Grid<MqttValue> mqttValueGrid;
     private final MqttConnectionService mqttConnectionService;
-    private Span mqttStatusInfo;
 
-    @Autowired 
+    // Components for status info
+    private Span spanStatusInfo = new Span("Placeholder");
+    private Button btnReconnect = new Button("Reconnect");
+
+    // Components for toolbar
+    private TextField fieldTopic = new TextField("Topic");
+    private TextField fieldMessage = new TextField("Message");
+    private Button btnPublish = new Button("Publish");
+
+    // Components for grid
+    private Grid<MqttValue> mqttValueGrid = new Grid<>(MqttValue.class);
+
+    @Autowired
     public MainView(MqttValueService mqttValueService, MqttConnectionService mqttConnectionService) {
         this.mqttValueService = mqttValueService;
-        this.mqttValueGrid = new Grid<>(MqttValue.class);
         this.mqttConnectionService = mqttConnectionService;
     }
 
     @PostConstruct
-    private void init() {
+    public void init() {
         createStatusInfo();
         createToolbar();
         createGrid();
     }
 
     public void createStatusInfo() {
-        String mqttConnection = mqttConnectionService.getMqttClient().isConnected() ? "success" : "error";
-        if(mqttStatusInfo == null) {
-            mqttStatusInfo = new Span("MQTT connection status: " + mqttConnection);
-            mqttStatusInfo.setHeight("40px");
-            mqttStatusInfo.getElement().getThemeList().add("badge " + mqttConnection);
+        spanStatusInfo.setHeight("40px");
+        btnReconnect.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+        btnReconnect.addClickListener(click -> {
+            mqttConnectionService.connect();
+        });
 
-            Button retryBtn = new Button("Reconnect");
-            retryBtn.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-            retryBtn.addClickListener(click -> {
-                boolean connected = mqttConnectionService.getMqttClient().isConnected();
-                if(!connected)
-                    mqttConnectionService.connect();
-                connected = mqttConnectionService.getMqttClient().isConnected();
-                NotificationUtil.create(!connected, connected ? "Connected to MQTT broker!" : "Could not connect to MQTT broker!");
-                createStatusInfo();
-            });
-
-            HorizontalLayout wrapperLayout = new HorizontalLayout(mqttStatusInfo, retryBtn);
-            wrapperLayout.setWidthFull();
-            wrapperLayout.expand(mqttStatusInfo);
-            mqttStatusInfo.getStyle().set("flex-grow", "1");
-            add(wrapperLayout);
-        } else {
-            mqttStatusInfo.setText("MQTT connection status: " + mqttConnection);
-            mqttStatusInfo.getElement().getThemeList().clear();
-            mqttStatusInfo.getElement().getThemeList().add("badge " + mqttConnection);
-        }
+        boolean initialStatus = mqttConnectionService.getMqttClient() == null ? false : mqttConnectionService.getMqttClient().isConnected();
+        HorizontalLayout layoutWrapper = new HorizontalLayout(spanStatusInfo, btnReconnect);
+        layoutWrapper.setWidthFull();
+        layoutWrapper.expand(spanStatusInfo);
+        spanStatusInfo.getStyle().set("flex-grow", "1");
+        enableDisableComponents(initialStatus);
+        add(layoutWrapper);
     }
 
     public void createToolbar() {
-        HorizontalLayout publishLayout = new HorizontalLayout();
-        TextField topicField = new TextField("Topic");
-        topicField.setRequired(true);
-        TextField messageField = new TextField("Message");
-        messageField.setRequired(true);
-        Button publishButton = new Button("Publish");
-        publishButton.addClickListener(click -> {
-            createStatusInfo();
-            if(topicField.isEmpty() || messageField.isEmpty()) {
-                if(topicField.isEmpty())
-                    topicField.setInvalid(true);
-                if(messageField.isEmpty())
-                    messageField.setInvalid(true);
+        fieldTopic.setRequired(true);
+        fieldMessage.setRequired(true);
+        btnPublish.addClickListener(click -> {
+            if(fieldTopic.isEmpty() || fieldMessage.isEmpty()) {
+                if(fieldTopic.isEmpty())
+                    fieldTopic.setInvalid(true);
+                if(fieldMessage.isEmpty())
+                    fieldMessage.setInvalid(true);
                 return;
             }
             if(!mqttConnectionService.getMqttClient().isConnected()) {
                 NotificationUtil.create(true, "Could not publish message: Client is not connected!");
-                return;
+                enableDisableComponents(false);
+            } else {
+                MqttValue mqttValue = new MqttValue(fieldTopic.getValue(), fieldMessage.getValue());
+                mqttConnectionService.publish(mqttValue);
+                fieldTopic.setValue("");
+                fieldTopic.setInvalid(false);
+                fieldMessage.setValue("");
+                fieldMessage.setInvalid(false);
+                NotificationUtil.create(false, "Message has been published!");
             }
-            MqttValue mqttValue = new MqttValue(topicField.getValue(), messageField.getValue());
-            mqttConnectionService.publish(mqttValue);
-            topicField.setValue("");
-            topicField.setInvalid(false);
-            messageField.setValue("");
-            messageField.setInvalid(false);
-            NotificationUtil.create(false, "Message has been published!");
         });
-        publishLayout.setVerticalComponentAlignment(FlexComponent.Alignment.END, publishButton);
-        publishLayout.add(topicField, messageField, publishButton);
 
-        Button refreshButton = new Button("Refresh");        
-        refreshButton.addClickListener(click -> {
-            createStatusInfo();
+        HorizontalLayout layoutPublish = new HorizontalLayout();
+        layoutPublish.setVerticalComponentAlignment(FlexComponent.Alignment.END, btnPublish);
+        layoutPublish.add(fieldTopic, fieldMessage, btnPublish);
+     
+        Button btnRefresh = new Button("Refresh");
+        btnRefresh.addClickListener(click -> {
             populateGrid();
         });
-        
-        HorizontalLayout wrapperLayout = new HorizontalLayout(publishLayout, refreshButton);
-        wrapperLayout.setWidthFull();
-        wrapperLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.BETWEEN);
-        wrapperLayout.setVerticalComponentAlignment(FlexComponent.Alignment.END, refreshButton);
-        add(wrapperLayout);
+
+        HorizontalLayout layoutWrapper = new HorizontalLayout(layoutPublish, btnRefresh);
+        layoutWrapper.setWidthFull();
+        layoutWrapper.setJustifyContentMode(FlexComponent.JustifyContentMode.BETWEEN);
+        layoutWrapper.setVerticalComponentAlignment(FlexComponent.Alignment.END, btnRefresh);
+        add(layoutWrapper);
     }
 
     public void createGrid() {
@@ -126,5 +124,31 @@ public class MainView extends VerticalLayout {
     public void populateGrid() {
         List<MqttValue> messages = mqttValueService.findAll();
         mqttValueGrid.setItems(messages);
+    }
+
+    public void enableDisableComponents(boolean connected) {
+        String strConnected = connected ? "success" : "error";
+
+        spanStatusInfo.setText("MQTT connection status: " + strConnected);
+        spanStatusInfo.getElement().getThemeList().clear();
+        spanStatusInfo.getElement().getThemeList().add("badge " + strConnected);
+
+        fieldTopic.setReadOnly(!connected);
+        fieldMessage.setReadOnly(!connected);
+        btnPublish.setEnabled(connected);
+    }
+
+    @EventListener
+    public void onMqttConnectionStatusChangeEvent(MqttConnectionStatusChangeEvent event) {
+        UI.getCurrent().access(() -> {
+            enableDisableComponents(event.isConnected());
+        });
+    }
+
+    @EventListener
+    public void onMqttConnectionMessageReceiveEvent(MqttConnectionMessageReceiveEvent event) {
+        UI.getCurrent().access(() -> {
+            populateGrid();
+        });
     }
 }

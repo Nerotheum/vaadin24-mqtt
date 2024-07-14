@@ -31,6 +31,9 @@ public class MqttConnectionService {
     @Value("${mqtt.password}")
     private String password;
 
+    @Value("${mqtt.ping.interval}")
+    private int pingInterval;
+
     private final Logger logger = Logger.getLogger(this.getClass().getName());
     private IMqttClient mqttClient;
     private MqttValueService mqttValueService;
@@ -44,7 +47,7 @@ public class MqttConnectionService {
     @PostConstruct
     public void init() {
         scheduler = Executors.newScheduledThreadPool(1);
-        scheduler.scheduleAtFixedRate(this::checkConnection, 0, 10, TimeUnit.SECONDS);
+        scheduler.scheduleAtFixedRate(this::checkConnection, 0, pingInterval, TimeUnit.SECONDS);
     }
 
     private void checkConnection() {

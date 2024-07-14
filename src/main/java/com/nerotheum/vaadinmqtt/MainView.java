@@ -35,16 +35,13 @@ public class MainView extends VerticalLayout implements BroadcasterListener {
     private final MqttConnectionService mqttConnectionService;
     private Registration broadcasterRegistration;
 
-    // Components for status info
     private Span spanStatusInfo = new Span("Placeholder");
     private Button btnReconnect = new Button("Reconnect");
 
-    // Components for toolbar
     private TextField fieldTopic = new TextField("Topic");
     private TextField fieldMessage = new TextField("Message");
     private Button btnPublish = new Button("Publish");
 
-    // Components for grid
     private Grid<MqttValue> mqttValueGrid = new Grid<>(MqttValue.class);
 
     @Autowired

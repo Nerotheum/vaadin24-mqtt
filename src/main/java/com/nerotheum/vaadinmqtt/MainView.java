@@ -3,15 +3,14 @@ package com.nerotheum.vaadinmqtt;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.event.EventListener;
 
+import com.nerotheum.vaadinmqtt.broadcast.Broadcaster;
+import com.nerotheum.vaadinmqtt.broadcast.BroadcasterListener;
 import com.nerotheum.vaadinmqtt.mqtt.MqttConnectionService;
 import com.nerotheum.vaadinmqtt.mqtt.MqttValue;
 import com.nerotheum.vaadinmqtt.mqtt.MqttValueService;
-import com.nerotheum.vaadinmqtt.mqtt.events.MqttConnectionMessageReceiveEvent;
-import com.nerotheum.vaadinmqtt.mqtt.events.MqttConnectionStatusChangeEvent;
 import com.nerotheum.vaadinmqtt.utils.NotificationUtil;
-import com.vaadin.flow.component.UI;
+import com.vaadin.flow.component.DetachEvent;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.grid.Grid;
@@ -21,6 +20,8 @@ import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.router.Route;
+import com.vaadin.flow.server.Command;
+import com.vaadin.flow.shared.Registration;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 
@@ -29,9 +30,10 @@ import jakarta.annotation.PostConstruct;
 @Route
 @UIScope
 @SpringComponent
-public class MainView extends VerticalLayout {
+public class MainView extends VerticalLayout implements BroadcasterListener {
     private final MqttValueService mqttValueService;
     private final MqttConnectionService mqttConnectionService;
+    private Registration broadcasterRegistration;
 
     // Components for status info
     private Span spanStatusInfo = new Span("Placeholder");
@@ -49,6 +51,7 @@ public class MainView extends VerticalLayout {
     public MainView(MqttValueService mqttValueService, MqttConnectionService mqttConnectionService) {
         this.mqttValueService = mqttValueService;
         this.mqttConnectionService = mqttConnectionService;
+        this.broadcasterRegistration = Broadcaster.register(this);
     }
 
     @PostConstruct
@@ -138,17 +141,27 @@ public class MainView extends VerticalLayout {
         btnPublish.setEnabled(connected);
     }
 
-    @EventListener
-    public void onMqttConnectionStatusChangeEvent(MqttConnectionStatusChangeEvent event) {
-        UI.getCurrent().access(() -> {
-            enableDisableComponents(event.isConnected());
-        });
+    @Override
+    public void receiveBroadcast(String message) {
+        getUI().ifPresent(ui -> ui.access((Command) () -> {
+            switch(message) {
+                case "RefreshConnectionStatus":
+                    enableDisableComponents(mqttConnectionService.getMqttClient().isConnected());
+                    ui.push();
+                    break;
+                case "RefreshGrid":
+                    populateGrid();
+                    ui.push();
+                    break;
+                default:
+                    break;
+            }
+        }));
     }
 
-    @EventListener
-    public void onMqttConnectionMessageReceiveEvent(MqttConnectionMessageReceiveEvent event) {
-        UI.getCurrent().access(() -> {
-            populateGrid();
-        });
+    @Override
+    protected void onDetach(DetachEvent detachEvent) {
+        broadcasterRegistration.remove();
+        super.onDetach(detachEvent);
     }
 }

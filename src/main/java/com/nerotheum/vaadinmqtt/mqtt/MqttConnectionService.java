@@ -4,12 +4,9 @@ import jakarta.annotation.PreDestroy;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.ApplicationEvent;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
-import com.nerotheum.vaadinmqtt.mqtt.events.MqttConnectionMessageReceiveEvent;
-import com.nerotheum.vaadinmqtt.mqtt.events.MqttConnectionStatusChangeEvent;
+import com.nerotheum.vaadinmqtt.broadcast.Broadcaster;
 import com.vaadin.flow.component.UI;
 
 import org.eclipse.paho.client.mqttv3.*;
@@ -32,14 +29,12 @@ public class MqttConnectionService {
     private String password;
 
     private final Logger logger = Logger.getLogger(this.getClass().getName());
-    private final ApplicationEventPublisher eventPublisher;
     private IMqttClient mqttClient;
     private MqttValueService mqttValueService;
     private UI ui;
 
     @Autowired
-    public MqttConnectionService(ApplicationEventPublisher eventPublisher, MqttValueService mqttValueService) {
-        this.eventPublisher = eventPublisher;
+    public MqttConnectionService(MqttValueService mqttValueService) {
         this.mqttValueService = mqttValueService;
     }
 
@@ -57,14 +52,14 @@ public class MqttConnectionService {
                 MqttValue mqttValue = new MqttValue(topic, new String(message.getPayload()));
                 logger.info("Received message: " + mqttValue.toString());
                 mqttValueService.add(mqttValue);
-                publishEvent(new MqttConnectionMessageReceiveEvent(this, mqttValue));
+                Broadcaster.broadcast("RefreshGrid");
             });
             
             logger.info("Connected to MQTT broker: " + brokerUrl);
         } catch(Exception ex) {
             logger.warning(ex.getMessage());
         }
-        publishEvent(new MqttConnectionStatusChangeEvent(this, mqttClient.isConnected()));
+        Broadcaster.broadcast("RefreshConnectionStatus");
     }
 
     @PreDestroy
@@ -72,7 +67,7 @@ public class MqttConnectionService {
         try {
             mqttClient.disconnect();
             logger.info("Manually closed the connection to MQTT broker");
-            publishEvent(new MqttConnectionStatusChangeEvent(this, false));
+            Broadcaster.broadcast("RefreshConnectionStatus");
         } catch (Exception ex) {
             logger.warning(ex.getMessage());
         }
@@ -90,11 +85,5 @@ public class MqttConnectionService {
 
     public IMqttClient getMqttClient() {
         return mqttClient;
-    }
-
-    public void publishEvent(ApplicationEvent applicationEvent) {
-        ui.access(() -> {
-            eventPublisher.publishEvent(applicationEvent);
-        });
     }
 }

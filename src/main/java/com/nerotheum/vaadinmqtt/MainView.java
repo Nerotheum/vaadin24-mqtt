@@ -53,7 +53,11 @@ public class MainView extends VerticalLayout {
             Button retryBtn = new Button("Reconnect");
             retryBtn.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
             retryBtn.addClickListener(click -> {
-                mqttConnectionService.connect();
+                boolean connected = mqttConnectionService.getMqttClient().isConnected();
+                if(!connected)
+                    mqttConnectionService.connect();
+                connected = mqttConnectionService.getMqttClient().isConnected();
+                NotificationUtil.create(!connected, connected ? "Connected to MQTT broker!" : "Could not connect to MQTT broker!");
                 createStatusInfo();
             });
 

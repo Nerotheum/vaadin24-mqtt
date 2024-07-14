@@ -56,10 +56,13 @@ public class MqttConnectionService {
     }
 
     @PreDestroy
-    public void disconnect() throws MqttException {
-        mqttClient.disconnect();
-        logger.warning("Connection lost to MQTT broker. Attempting to reconnect!");
-        this.connect();
+    public void disconnect() {
+        try {
+            mqttClient.disconnect();
+            logger.info("Connection lost to MQTT broker");
+        } catch (Exception ex) {
+            logger.warning(ex.getMessage());
+        }
     }
 
     public void publish(MqttValue mqttValue) {

@@ -5,17 +5,17 @@ This project can be used as a starting point to create your own Vaadin applicati
 ## Features
 - [X] Connect and listen to MQTT broker
 - [X] Store received MQTT messages within specified database
-- [X] Display MQTT messages within grid
-- [X] Update grid using Vaadin built in websockets in real time
-- [X] Implement view component that shows the MQTT status
-- [X] Implement view component to send MQTT messages
-- [X] Implement view component to manually refresh the grid
+- [X] Display MQTT connection status
+- [X] Display MQTT messages within a grid
+- [X] Update mqtt connection status and messages using Vaadin built-in websockets in real time
+- [X] Add button to re-connect to MQTT broker
+- [X] Add button to refresh MQTT messages grid
+- [X] Send messages to MQTT broker
 - [X] Periodically check whether the MQTT connection is alive
 - [X] Enable/disable components based on the MQTT connection status
 
 ## Running the Application
-Before you continue, make sure to configure your application.properties before
-you launch the application, else it might not start.
+Before you continue, make sure to configure your application.properties.
 There are two ways to run the application :  using `mvn spring-boot:run` or by running the `Application` class directly from your IDE.
 
 You can use any IDE of your preference,but we suggest Eclipse or Intellij IDEA.

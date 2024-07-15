@@ -45,7 +45,7 @@ public class MqttConnectionService {
     }
 
     @PostConstruct
-    public void init() {
+    private void init() {
         scheduler = Executors.newScheduledThreadPool(1);
         scheduler.scheduleAtFixedRate(this::checkConnection, 0, pingInterval, TimeUnit.SECONDS);
     }

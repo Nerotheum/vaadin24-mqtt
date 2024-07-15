@@ -42,7 +42,7 @@ public class MainView extends VerticalLayout implements BroadcasterListener {
     private TextField fieldMessage = new TextField("Message");
     private Button btnPublish = new Button("Publish");
 
-    private Grid<MqttValue> mqttValueGrid = new Grid<>(MqttValue.class);
+    private Grid<MqttValue> gridMqttValue = new Grid<>(MqttValue.class);
 
     @Autowired
     public MainView(MqttValueService mqttValueService, MqttConnectionService mqttConnectionService) {
@@ -52,29 +52,26 @@ public class MainView extends VerticalLayout implements BroadcasterListener {
     }
 
     @PostConstruct
-    public void init() {
+    private void init() {
         createStatusInfo();
         createToolbar();
         createGrid();
     }
 
-    public void createStatusInfo() {
+    private void createStatusInfo() {
         spanStatusInfo.setHeight("40px");
         btnReconnect.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-        btnReconnect.addClickListener(click -> {
-            mqttConnectionService.connect();
-        });
+        btnReconnect.addClickListener(click -> mqttConnectionService.connect());
 
-        boolean initialStatus = mqttConnectionService.getMqttClient() == null ? false : mqttConnectionService.getMqttClient().isConnected();
         HorizontalLayout layoutWrapper = new HorizontalLayout(spanStatusInfo, btnReconnect);
         layoutWrapper.setWidthFull();
         layoutWrapper.expand(spanStatusInfo);
         spanStatusInfo.getStyle().set("flex-grow", "1");
-        enableDisableComponents(initialStatus);
+        refreshConnectionStatus();
         add(layoutWrapper);
     }
 
-    public void createToolbar() {
+    private void createToolbar() {
         fieldTopic.setRequired(true);
         fieldMessage.setRequired(true);
         btnPublish.addClickListener(click -> {
@@ -87,7 +84,7 @@ public class MainView extends VerticalLayout implements BroadcasterListener {
             }
             if(!mqttConnectionService.getMqttClient().isConnected()) {
                 NotificationUtil.create(true, "Could not publish message: Client is not connected!");
-                enableDisableComponents(false);
+                refreshConnectionStatus();
             } else {
                 MqttValue mqttValue = new MqttValue(fieldTopic.getValue(), fieldMessage.getValue());
                 mqttConnectionService.publish(mqttValue);
@@ -104,9 +101,7 @@ public class MainView extends VerticalLayout implements BroadcasterListener {
         layoutPublish.add(fieldTopic, fieldMessage, btnPublish);
      
         Button btnRefresh = new Button("Refresh");
-        btnRefresh.addClickListener(click -> {
-            populateGrid();
-        });
+        btnRefresh.addClickListener(click -> refreshGrid());
 
         HorizontalLayout layoutWrapper = new HorizontalLayout(layoutPublish, btnRefresh);
         layoutWrapper.setWidthFull();
@@ -115,18 +110,19 @@ public class MainView extends VerticalLayout implements BroadcasterListener {
         add(layoutWrapper);
     }
 
-    public void createGrid() {
-        mqttValueGrid.setColumns("id", "topic", "message", "dateTime");
-        populateGrid();
-        add(mqttValueGrid);
+    private void createGrid() {
+        gridMqttValue.setColumns("id", "topic", "message", "dateTime");
+        refreshGrid();
+        add(gridMqttValue);
     }
 
-    public void populateGrid() {
+    private void refreshGrid() {
         List<MqttValue> messages = mqttValueService.findAll();
-        mqttValueGrid.setItems(messages);
+        gridMqttValue.setItems(messages);
     }
 
-    public void enableDisableComponents(boolean connected) {
+    private void refreshConnectionStatus() {
+        boolean connected = mqttConnectionService.getMqttClient() == null ? false : mqttConnectionService.getMqttClient().isConnected();
         String strConnected = connected ? "success" : "error";
 
         spanStatusInfo.setText("MQTT connection status: " + strConnected);
@@ -143,12 +139,11 @@ public class MainView extends VerticalLayout implements BroadcasterListener {
         getUI().ifPresent(ui -> ui.access((Command) () -> {
             switch(message) {
                 case "RefreshConnectionStatus":
-                    boolean connected = mqttConnectionService.getMqttClient() == null ? false : mqttConnectionService.getMqttClient().isConnected();
-                    enableDisableComponents(connected);
+                    refreshConnectionStatus();
                     ui.push();
                     break;
                 case "RefreshGrid":
-                    populateGrid();
+                    refreshGrid();
                     ui.push();
                     break;
                 default:

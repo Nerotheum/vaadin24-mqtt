@@ -17,6 +17,3 @@ This project can be used as a starting point to create your own Vaadin applicati
 ## Running the Application
 Before you continue, make sure to configure your application.properties.
 There are two ways to run the application :  using `mvn spring-boot:run` or by running the `Application` class directly from your IDE.
-
-You can use any IDE of your preference,but we suggest Eclipse or Intellij IDEA.
-Below are the configuration details to start the project using a `spring-boot:run` command. Both Eclipse and Intellij IDEA are covered.

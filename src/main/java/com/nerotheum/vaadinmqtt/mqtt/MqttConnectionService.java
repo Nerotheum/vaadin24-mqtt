@@ -34,6 +34,12 @@ public class MqttConnectionService {
     @Value("${mqtt.ping.interval}")
     private int pingInterval;
 
+    @Value("${mqtt.auto.start}")
+    private boolean autoStart;
+
+    @Value("${mqtt.auto.reconnect}")
+    private boolean autoReconnect;
+
     private final Logger logger = Logger.getLogger(this.getClass().getName());
     private IMqttClient mqttClient;
     private MqttValueService mqttValueService;
@@ -46,13 +52,17 @@ public class MqttConnectionService {
 
     @PostConstruct
     private void init() {
+        if(autoStart)
+            connect();
         scheduler = Executors.newScheduledThreadPool(1);
-        scheduler.scheduleAtFixedRate(this::checkConnection, 0, pingInterval, TimeUnit.SECONDS);
+        scheduler.scheduleAtFixedRate(this::checkConnectionStatus, 0, pingInterval, TimeUnit.SECONDS);
     }
 
-    private void checkConnection() {
+    private void checkConnectionStatus() {
         if (mqttClient == null || !mqttClient.isConnected()) {
             Broadcaster.broadcast("RefreshConnectionStatus");
+            if(autoReconnect)
+                connect();
         }
     }
 

@@ -4,6 +4,7 @@ This project can be used as a starting point to create your own Vaadin applicati
 
 ## Features
 - [X] Connect and listen to MQTT broker
+- [X] Configurable auto mqtt connection start and reconnect
 - [X] Store received MQTT messages within specified database
 - [X] Display MQTT connection status
 - [X] Display MQTT messages within a grid

@@ -1,6 +1,8 @@
 # Project Base for Vaadin, Spring Boot and MQTT
-
 This project can be used as a starting point to create your own Vaadin application with Spring Boot and MQTT. It contains everything to get you started.
+
+## Preview
+<img width="960" alt="preview" src="https://github.com/user-attachments/assets/34f84d7a-d9fa-4e77-bafd-38b257658341">
 
 ## Features
 - [X] Connect and listen to MQTT broker

@@ -21,7 +21,7 @@ public class Broadcaster {
         };
     }
 
-    public static synchronized void broadcast(String message) {
+    public static synchronized void broadcast(BroadcastMessage message) {
         for (BroadcasterListener listener : listeners) {
             executorService.execute(() -> listener.receiveBroadcast(message));
         }

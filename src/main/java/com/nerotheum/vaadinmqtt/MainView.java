@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 
+import com.nerotheum.vaadinmqtt.broadcast.BroadcastMessage;
 import com.nerotheum.vaadinmqtt.broadcast.Broadcaster;
 import com.nerotheum.vaadinmqtt.broadcast.BroadcasterListener;
 import com.nerotheum.vaadinmqtt.mqtt.MqttConnectionService;
@@ -135,14 +136,14 @@ public class MainView extends VerticalLayout implements BroadcasterListener {
     }
 
     @Override
-    public void receiveBroadcast(String message) {
+    public void receiveBroadcast(BroadcastMessage message) {
         getUI().ifPresent(ui -> ui.access((Command) () -> {
             switch(message) {
-                case "RefreshConnectionStatus":
+                case RefreshConnectionStatus:
                     refreshConnectionStatus();
                     ui.push();
                     break;
-                case "RefreshGrid":
+                case RefreshGrid:
                     refreshGrid();
                     ui.push();
                     break;

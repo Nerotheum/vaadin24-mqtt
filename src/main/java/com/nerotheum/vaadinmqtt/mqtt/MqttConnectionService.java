@@ -61,7 +61,7 @@ public class MqttConnectionService {
 
     private void checkConnectionStatus() {
         if (mqttClient == null || !mqttClient.isConnected()) {
-            Broadcaster.broadcast(BroadcastMessage.RefreshConnectionStatus.toString());
+            Broadcaster.broadcast(BroadcastMessage.RefreshConnectionStatus);
             if(autoReconnect)
                 connect();
         }
@@ -80,14 +80,14 @@ public class MqttConnectionService {
                 MqttValue mqttValue = new MqttValue(topic, new String(message.getPayload()));
                 logger.info("Received message: " + mqttValue.toString());
                 mqttValueService.add(mqttValue);
-                Broadcaster.broadcast(BroadcastMessage.RefreshGrid.toString());
+                Broadcaster.broadcast(BroadcastMessage.RefreshGrid);
             });
             
             logger.info("Connected to MQTT broker: " + brokerUrl);
         } catch(Exception ex) {
             logger.warning(ex.getMessage());
         }
-        Broadcaster.broadcast(BroadcastMessage.RefreshConnectionStatus.toString());
+        Broadcaster.broadcast(BroadcastMessage.RefreshConnectionStatus);
     }
 
     @PreDestroy
@@ -95,7 +95,7 @@ public class MqttConnectionService {
         try {
             mqttClient.disconnect();
             logger.info("Manually closed the connection to MQTT broker");
-            Broadcaster.broadcast(BroadcastMessage.RefreshConnectionStatus.toString());
+            Broadcaster.broadcast(BroadcastMessage.RefreshConnectionStatus);
         } catch (Exception ex) {
             logger.warning(ex.getMessage());
         }

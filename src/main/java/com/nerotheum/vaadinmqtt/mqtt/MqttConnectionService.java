@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import com.nerotheum.vaadinmqtt.broadcast.BroadcastMessage;
 import com.nerotheum.vaadinmqtt.broadcast.Broadcaster;
 
 import org.eclipse.paho.client.mqttv3.*;
@@ -60,7 +61,7 @@ public class MqttConnectionService {
 
     private void checkConnectionStatus() {
         if (mqttClient == null || !mqttClient.isConnected()) {
-            Broadcaster.broadcast("RefreshConnectionStatus");
+            Broadcaster.broadcast(BroadcastMessage.RefreshConnectionStatus.toString());
             if(autoReconnect)
                 connect();
         }
@@ -79,14 +80,14 @@ public class MqttConnectionService {
                 MqttValue mqttValue = new MqttValue(topic, new String(message.getPayload()));
                 logger.info("Received message: " + mqttValue.toString());
                 mqttValueService.add(mqttValue);
-                Broadcaster.broadcast("RefreshGrid");
+                Broadcaster.broadcast(BroadcastMessage.RefreshGrid.toString());
             });
             
             logger.info("Connected to MQTT broker: " + brokerUrl);
         } catch(Exception ex) {
             logger.warning(ex.getMessage());
         }
-        Broadcaster.broadcast("RefreshConnectionStatus");
+        Broadcaster.broadcast(BroadcastMessage.RefreshConnectionStatus.toString());
     }
 
     @PreDestroy
@@ -94,7 +95,7 @@ public class MqttConnectionService {
         try {
             mqttClient.disconnect();
             logger.info("Manually closed the connection to MQTT broker");
-            Broadcaster.broadcast("RefreshConnectionStatus");
+            Broadcaster.broadcast(BroadcastMessage.RefreshConnectionStatus.toString());
         } catch (Exception ex) {
             logger.warning(ex.getMessage());
         }
